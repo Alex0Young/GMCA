@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="Dashboard">
+  <meta name="keyword" content="Dashboard, Bootstrap, Admin, Template, Theme, Responsive, Fluid, Retina">
+  <title>GM CA</title>
+
+  <!-- Favicons -->
+  <link href="{{url_for('static', filename='img/favicon.png')}}" rel="icon">
+  <link href="{{url_for('static', filename='img/apple-touch-icon.png')}}" rel="apple-touch-icon">
+
+  <!-- Bootstrap core CSS -->
+  <link href="{{url_for('static', filename='js/bootstrap/css/bootstrap.min.css')}}" rel="stylesheet">
+  <!--external css-->
+  <link href="{{url_for('static', filename='js/font-awesome/css/font-awesome.css')}}" rel="stylesheet" />
+  <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/zabuto_calender.css')}}">
+  <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='js/gritter/css/jquery.gritter.css')}}" />
+  <!-- Custom styles for this template -->
+  <link href="{{url_for('static', filename='css/style.css')}}" rel="stylesheet">
+  <link href="{{url_for('static', filename='css/style-responsive.css')}}" rel="stylesheet">
+  <script src="{{url_for('static', filename='js/chart-master/Chart.js')}}"></script>
+</head>
+
+<body>
+  <!-- **********************************************************************************************************************************************************
+      MAIN CONTENT
+      *********************************************************************************************************************************************************** -->
+  <div id="login-page">
+    <div class="container">
+      <form class="form-login" action="{{url_for('login')}}" method="post">
+        <h2 class="form-login-heading">sign in now</h2>
+        <div class="login-wrap">
+          <input type="text" class="form-control" name="username" placeholder="User Name" autofocus>
+          <br>
+          <input type="password" name="password" class="form-control" placeholder="Password">
+          <label class="checkbox">
+            <input type="checkbox" value="remember-me"> Remember me
+            <span class="pull-right">
+            <a data-toggle="modal" href="login.html#myModal"> Forgot Password?</a>
+            </span>
+            </label>
+          <button class="btn btn-theme btn-block" href="{{url_for('index')}}" type="submit"><i class="fa fa-lock"></i> SIGN IN</button>
+          <hr>
+        </div>
+      </form>
+    </div>
+  </div>
+  <!-- js placed at the end of the document so the pages load faster -->
+  <script src="{{url_for('static',filename='js/jquery/jquery.min.js')}}"></script>
+  <script src="{{url_for('static', filename='js/bootstrap/js/bootstrap.min.js')}}"></script>
+  <!--BACKSTRETCH-->
+  <!-- You can use an image of whatever size. This script will stretch to fit in any screen size.-->
+  <script type="text/javascript" src="{{url_for('static', filename='js/jquery.backstretch.min.js')}}"></script>
+  <script>
+    $.backstretch("img/login-bg.jpg", {
+      speed: 500
+    });
+  </script>
+</body>
+
+</html>

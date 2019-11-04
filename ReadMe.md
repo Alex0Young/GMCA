@@ -8,6 +8,30 @@ CA 主要需要实现的功能有：二级CA申请（包括私钥加密的密钥
 
 CA系统只有二级CA管理员能够进入。
 
+### 数据库说明
+
+#### 证书数据库
+(暂定)
+* id, int类型, 证书id
+* serial_number, text类型, 表示证书的序列号/公钥
+* state, int类型, 表示证书的状态，预定0表示证书吊销，1表示证书正常，2表示证书过期
+* create_date, DATE类型, 证书的创建日期
+* effective_time, int类型, 表示证书的有效期, 年为单位
+* country, province, city, organization, name等为text类型
+* email为text类型
+
+#### 吊销证书数据库
+
+* id, int类型, 证书id
+* serial_number, text类型, 表示证书的序列号/公钥
+* state, int类型, 表示证书的状态，预定0表示证书吊销，1表示证书正常，2表示证书过期
+* create_date, DATE类型, 证书的创建日期
+* effective_time, int类型, 表示证书的有效期, 年为单位
+* destroy_date, DATE类型, 表示证书的吊销日期
+* country, province, city, organization, name等为text类型
+* email为text类型
+
+
 ## Client
 
 Client 需要实现的功能有：证书请求生成，获取证书列表，吊销证书。

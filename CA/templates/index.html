@@ -111,78 +111,70 @@
             <div class="form-panel">
               <div class="form">
                 <form class="cmxform form-horizontal style-form" id="signupForm" method="post" action="{{url_for('index')}}">
-
-                  <div class="form-group ">
-                    <label for="password" class="control-label col-lg-2">CA私钥加密密钥</label>
-                    <div class="col-lg-10">
-                      <input class=" form-control" id="password" name="password" type="password" />
-                    </div>
-                  </div>
-                  <div class="form-group ">
-                    <label for="Cpassword" class="control-label col-lg-2">确认密钥</label>
-                    <div class="col-lg-10">
-                      <input class="form-control " id="confirm_password" name="confirm_password" type="password" />
-                    </div>
-                  </div>
-
                   <div class="form-group ">
                     <label for="CN" class="control-label col-lg-2">Counrty Name(所在国家)</label>
                     <div class="col-lg-10">
-                      <input class=" form-control" id="CountryName" name="country_name" type="text" />
+                      <input class=" form-control" id="CountryName" name="country_name" type="text" value={{ info[0] }} disabled/>
                     </div>
                   </div>
                   <div class="form-group ">
                     <label for="Pname" class="control-label col-lg-2">State or Province Name(所在省份)</label>
                     <div class="col-lg-10">
-                      <input class="form-control " id="StateName" name="state_name" type="text" />
+                      <input class="form-control " id="StateName" name="state_name" type="text" value={{ info[1] }} disabled/>
                     </div>
                   </div>
                   <div class="form-group ">
                     <label for="Lname" class="control-label col-lg-2">Locality Name(所在城市)</label>
                     <div class="col-lg-10">
-                      <input class="form-control " id="LocalityName" name="loc_name" type="text" />
+                      <input class="form-control " id="LocalityName" name="loc_name" type="text" value={{ info[2] }} disabled/>
                     </div>
                   </div>
 
                   <div class="form-group ">
                     <label for="Oname" class="control-label col-lg-2">Organization Name(组织名称)</label>
                     <div class="col-lg-10">
-                      <input class="form-control " id="OrganizationName" name="org_name" type="text" />
+                      <input class="form-control " id="OrganizationName" name="org_name" type="text" value={{ info[3] }} disabled/>
                     </div>
                   </div>
                   <div class="form-group ">
                     <label for="Uname" class="control-label col-lg-2">Organizational Unit Name(所在职位)</label>
                     <div class="col-lg-10">
-                      <input class="form-control " id="UnitName" name="unit_name" type="text" />
+                      <input class="form-control " id="UnitName" name="unit_name" type="text" value={{ info[4] }} disabled/>
                     </div>
                   </div>
 
                   <div class="form-group ">
                     <label for="Cname" class="control-label col-lg-2">Common Name(名称)</label>
                     <div class="col-lg-10">
-                      <input class="form-control " id="CommonName" name="common_name" type="text" />
+                      <input class="form-control " id="CommonName" name="common_name" type="text" value={{ info[5] }} disabled/>
                     </div>
                   </div>
 
                   <div class="form-group ">
                     <label for="Email" class="control-label col-lg-2">Email Address(邮箱)</label>
                     <div class="col-lg-10">
-                      <input class="form-control " id="email" name="email" type="text" />
+                      <input class="form-control " id="email" name="email" type="text" value={{ info[6] }} disabled/>
                     </div>
                   </div>
 
+                  {% if flag == 0 %}
                   <div class="form-group ">
-                    <label for="agree" class="control-label col-lg-2 col-sm-3">Agree to Our Policy</label>
-                    <div class="col-lg-10 col-sm-9">
-                      <input type="checkbox" style="width: 20px" class="checkbox form-control" id="agree" name="agree" />
-                    </div>
-                  </div>
-                  <div class="form-group ">
-                    <label for="newsletter" class="control-label col-lg-2 col-sm-3">Receive the Newsletter</label>
+                    <label for="newsletter" class="control-label col-lg-2 col-sm-3">正在等待根CA签名</label>
                     <div class="col-lg-10 col-sm-9">
                       <input type="checkbox" style="width: 20px" class="checkbox form-control" id="newsletter" name="newsletter" />
                     </div>
                   </div>
+                  {% endif %}
+                  {% if flag == 1 %}
+                   <div class="form-group ">
+                    <label for="newsletter" class="control-label col-lg-2 col-sm-3">已经生成二级CA证书</label>
+                    <div class="col-lg-10 col-sm-9">
+                      <input type="checkbox" style="width: 20px" class="checkbox form-control" id="newsletter" name="newsletter" />
+                    </div>
+                  </div>
+                  {% endif %}
+
+
                   <div class="form-group">
                     <div class="col-lg-offset-2 col-lg-10">
                       <button class="btn btn-theme" type="submit">确认</button>

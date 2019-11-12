@@ -103,22 +103,22 @@
                 <thead>
                   <tr>
                     <th><i class="fa fa-bullhorn"></i> 编号</th>
-                    <th class="hidden-phone"><i class="fa fa-question-circle"></i> 序列号</th>
+                    <th class="hidden-phone"><i class="fa fa-question-circle"></i> 名称</th>
                     <th><i class="fa fa-bookmark"></i> 发布时间</th>
-                      <th><i class="fa fa-bullhorn"></i> 颁发者</th>
+                      <th><i class="fa fa-bullhorn"></i> 发布信息</th>
                       <th><i class="ffa fa-bullhorn"></i> 证书状态</th>
-                    <th><i class=" fa fa-edit"></i> 有效时间</th>
                   </tr>
                 </thead>
                 <tbody>
+                {% for i in crtinfo %}
                   <tr>
                     <td>1</td>
-                    <td class="hidden-phone">018fbf70acc8cf235584739735a7128fdf3c299a</td>
-                    <td>‎2019‎年‎10‎月‎28‎日 16:01:46</td>
-                    <td>CN = Sub CA OU = Test Dep O = Test Corp S = Beijing C = CN</td>
-                    <td>未签名</td>
-                    <td>‎2024‎年‎10‎月‎26‎日 16:01:46</td>
+                    <td>{{ i[0] }}</td>
+                    <td>{{ i[1] }}</td>
+                    <td>{{ i[2] }}</td>
+                    <td>已签名</td>
                   </tr>
+                {% endfor %}
                 </tbody>
               </table>
             </div>

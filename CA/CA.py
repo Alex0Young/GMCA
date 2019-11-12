@@ -1,13 +1,16 @@
-from flask import Flask,render_template
-from flask import request, url_for, session,redirect
+from flask import Flask, render_template
+from flask import request, url_for, session, redirect
 import os
 from flask import flash
+from configparser import ConfigParser
+from functools import wraps
 
 app = Flask(__name__)
 app.debug = True
 app.config['SECRET_KEY'] = os.urandom(24)
 
-#装饰器，用于判断用户是否在登录状态
+
+# 装饰器，用于判断用户是否在登录状态
 def login_requried(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -15,28 +18,234 @@ def login_requried(func):
             return func(*args, **kwargs)
         else:
             return redirect(url_for('login'))
+
     return wrapper
 
-def checkInfo(pwd,info):
+#检查sub-ca请求信息是否正确
+def checkInfo(pwd, info):
     print(pwd)
     print(info)
     if pwd[0] == pwd[1]:
-        for i in range(0,6):
+        for i in range(0, 6):
             if info[i] == '':
                 return 0
     else:
         return 0
     return 1
 
+
+# 编辑 sub-ca.conf
+def configSubCA(info):
+    basedir = 'sub_ca_{name}'.format(name=session['user_id'])
+    config_file = '{dir}/sub-ca.conf'.format(dir=basedir)
+    cp = ConfigParser()
+    cp.read(config_file)
+    cp.set('ca_dn', 'countryName', info[0])
+    cp.set('ca_dn', 'stateOrProvinceName', info[1])
+    cp.set('ca_dn', 'localityName', info[2])
+    cp.set('ca_dn', 'organizationName', info[3])
+    cp.set('ca_dn', 'organizationalUnitName', info[4])
+    cp.set('ca_dn', 'commonName', info[5])
+    cp.set('ca_dn', 'emailAddress', info[6])
+    with open(config_file, 'w+') as config_file:
+        cp.write(config_file)
+
+#获取sub-ca.conf
+def getConfig():
+    basedir = 'sub_ca_{name}'.format(name=session['user_id'])
+    config_file = 'sub-ca.conf'
+    cp = ConfigParser()
+    cp.read(config_file)
+    info = []
+    info.append(cp.get('ca_dn', 'countryName'))
+    info.append(cp.get('ca_dn', 'stateOrProvinceName'))
+    info.append(cp.get('ca_dn', 'localityName'))
+    info.append(cp.get('ca_dn', 'organizationName'))
+    info.append(cp.get('ca_dn', 'organizationalUnitName'))
+    info.append(cp.get('ca_dn', 'commonName'))
+    info.append(cp.get('ca_dn', 'emailAddress'))
+    return info
+
+
+# 初始化 sub_ca 环境，创建文件夹，复制配置文件
+def initEV():
+    # prepare dirs
+    cmd1 = 'mkdir sub_ca_{name}'
+    cmd2 = 'mkdir sub_ca_{name}/certs'
+    cmd3 = 'mkdir sub_ca_{name}/newcerts'
+    cmd4 = 'mkdir sub_ca_{name}/crl'
+    cmd5 = 'mkdir sub_ca_{name}/private'
+    cmd6 = 'mkdir sub_ca_{name}/db'
+    cmd12 = 'mkdir sub_ca_{name}/csr'
+    # prepare config
+    cmd7 = 'echo 1001 > sub_ca_{name}/db/crlnumber'
+    cmd8 = 'touch sub_ca_{name}/db/index'
+    cmd9 = 'touch sub_ca_{name}/db/index.attr'
+    cmd10 = 'chmod 700 sub_ca_{name}/private'
+    cmd11 = 'cp sub-ca.conf sub_ca_{name}/'
+    os.system(cmd1.format(name=session['user_id']))
+    os.system(cmd2.format(name=session['user_id']))
+    os.system(cmd3.format(name=session['user_id']))
+    os.system(cmd4.format(name=session['user_id']))
+    os.system(cmd5.format(name=session['user_id']))
+    os.system(cmd6.format(name=session['user_id']))
+    os.system(cmd7.format(name=session['user_id']))
+    os.system(cmd8.format(name=session['user_id']))
+    os.system(cmd9.format(name=session['user_id']))
+    os.system(cmd10.format(name=session['user_id']))
+    os.system(cmd11.format(name=session['user_id']))
+    os.system(cmd12.format(name=session['user_id']))
+
+
+# 生成 sub-ca 请求
 def gen_subCA(enpwd, info):
+    # gen sm2 key
+    basedir = 'sub_ca_{name}/'.format(name=session['user_id'])
+    cmd1 = 'openssl ecparam -genkey -name SM2 -out private/sub-ca.key'
+    cmd2 = 'openssl req -new -config {dir}/sub-ca.conf -key private/sub-ca.key -out sub-ca.csr'
+    os.system(cmd1)
+    os.system(cmd2)
+    # use root-ca ca sub-ca
+    # cmd3 = 'openssl ca -batch -config ../CA/root-ca.conf -rand_serial -in {dir}/sub-ca.csr -out {dir}/sub-ca.crt -extensions sub_ca_ext -passin pass:{pwd}'.format(dir=basedir,pwd='bupt')
+    # os.system(cmd3)
     return 1
+
+#初始化sub-ca
+def init_CA(enpwd, info):
+    initEV()
+    basedir = 'sub_ca_{name}'.format(name=session['user-id'])
+    cwd = os.getcwd()
+    if cwd.find(basedir) < 0:
+        os.chdir(basedir)
+    check1 = "csr"
+    if os.path.exists(check1):
+        configSubCA(info)
+        res = gen_subCA(enpwd, info)
+        check2 = "sub-ca.csr"
+        if os.path.exists(check2):
+            return 1
+        else:
+            return 0
+    else:
+        return 0
+
+#获取所有待ca签名的请求
+def getCsr():
+    basedir = 'sub_ca_{name}'.format(name=session['user_id'])
+    cwd = os.getcwd()
+    print('cwd:', cwd)
+    if cwd.find(basedir) < 0:
+        os.chdir(basedir)
+        print('ss')
+    print(os.getcwd())
+    csrDir = 'csr'.format(dir=basedir)
+    csrlist = os.listdir(csrDir)
+    csrinfo = []
+    cmd1 = 'openssl req -subject -noout -in {dir}/{csr} > data'
+    for i in range(0, len(csrlist)):
+        con = []
+        if csrlist[i] != 'data':
+            csr = csrlist[i].split('+')
+            con.append(csr[1])
+            con.append(csr[0])
+            os.system(cmd1.format(dir=csrDir, csr=csrlist[i]))
+            fp = open('data', 'r')
+            data = fp.readlines()
+            con.append(data)
+            csrinfo.append(con)
+    return csrinfo
+
+
+#对用户证书请求签名
+def signReq(reqName):
+    reqN = reqName.split('.')
+    print("reqN:", reqN)
+    basedir = 'sub_ca_{name}'.format(name=session['user_id'])
+    # change working dir
+    # os.chdir(basedir)
+    # sign client req
+    cmd1 = 'openssl ca -batch -config sub-ca.conf -in csr/{req}.csr -out newcerts/{req}.crt -extensions server_ext'.format(
+        req=reqN[0])
+    os.system(cmd1)
+    # combine sub-ca.crt
+    cmd2 = 'cat sub-ca.crt >> newcerts/{req}.crt'.format(req=reqN[0])
+    os.system(cmd2)
+    crtname = 'newcerts/{req}.crt'.format(req=reqN[0])
+    if os.path.isfile(crtname):
+        cmd3 = 'rm csr/{req}.csr'.format(req=reqN[0])
+        os.system(cmd3)
+        print('sign success')
+        return 1
+    else:
+        return 0
+
+#获取所有已发布生成的证书
+def getCrt():
+    basedir = 'sub_ca_{name}'.format(name=session['user_id'])
+    cwd = os.getcwd()
+    if cwd.find(basedir) < 0:
+        os.chdir(basedir)
+    crtDir = 'newcerts'
+    crtlist = os.listdir(crtDir)
+    print('crtlist:', crtlist)
+    crtinfo = []
+    cmd1 = 'openssl x509 -subject -in {dir}/{crt} > data'
+    for i in range(0, len(crtlist)):
+        con = []
+        if crtlist[i] != 'data':
+            crt = crtlist[i].split('+')
+            con.append(crt[1])
+            con.append(crt[0])
+            os.system(cmd1.format(dir=crtDir, crt=crtlist[i]))
+            fp = open('data', 'r')
+            data = fp.readline()
+            con.append(data)
+            crtinfo.append(con)
+            print('crtinfo:', crtinfo)
+    return crtinfo
 
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    print ('hhh')
     if session.get('login_in') != True:
         return redirect(url_for('login'))
+
+    basedir = 'sub_ca_{name}'.format(name=session['user_id'])
+    cwd = os.getcwd()
+    print('index:', cwd)
+    if cwd.find(basedir) > 0:
+        # os.chdir(basedir)
+        certfile = 'sub-ca.crt'
+        csrfile = 'sub-ca.csr'
+    else:
+        certfile = '{dir}/sub-ca.crt'.format(dir=basedir)
+        csrfile = '{dir}/sub-ca.csr'.format(dir=basedir)
+    # print('log 1',certfile)
+    if os.path.isfile(certfile):
+        if cwd.find(basedir) < 0:
+            os.chdir(basedir)
+        info = []
+        info = getConfig()
+        print("getinfo:", info[3], info[4], info[5], info[6])
+        flag = 1
+        return render_template('index.html', **locals())
+    elif os.path.isfile(csrfile):
+        if cwd.find(basedir):
+            os.chdir(basedir)
+        info = []
+        info = getConfig()
+        print("info:", info)
+        flag = 0
+        return render_template('index.html', **locals())
+    else:
+        print('log 2')
+        return render_template('initca.html')
+    #         return render_template('index.html')
+    # return render_template('index.html')
+
+
+@app.route('/initCA', methods=['GET', 'POST'])
+def initCA():
     if request.method == 'POST':
         enpwd = []
         enpwd.append(request.form['password'])
@@ -53,27 +262,59 @@ def index():
         if check == 0:
             flash('输入错误，请检查密码和输入信息')
             print('false')
+            flag = 0
+            return render_template('initca.html', **locals())
         else:
             flash('输入正确')
             print('ok')
+            # init sub_CA
+            res = init_CA(enpwd, info)
+            if res == 1:
+                print('ca init success')
+                flag = 2
+                return redirect(url_for('index'))
+            else:
+                print('ca init failed')
+                flag = 0
+                return render_template('initca.html', **locals())
+    return render_template('initca.html')
 
-        return render_template('index.html')
-    return render_template('index.html')
-@app.route('/issue')
+#发布证书，发布的证书信息需要存储进入数据库
+@app.route('/issue', methods=['GET', 'POST'])
 def issue():
-    return render_template('issue.html')
+    csrinfo = []
+    csrinfo = getCsr()
+    if request.method == 'POST':
+        vaddays = request.form['validation_days']
+        time = request.form['time']
+        name = request.form['name']
+        csrname = name + '+' + time
+        print('csrname:', csrname)
+        print("vaddays:", vaddays)
+        res = signReq(csrname)
+        return redirect(url_for('issue'))
+
+    return render_template('issue.html', **locals())
+
+
 @app.route('/validate')
 def validate():
     return render_template('validate.html')
 
+
 @app.route('/list')
 def list():
-    return render_template('list.html')
+    crtinfo = []
+    crtinfo = getCrt()
+    return render_template('list.html', **locals())
+
 
 @app.route('/destroy')
 def destroy():
     return render_template('destroy.html')
 
+
+#登录，无注册，登录用户密码需要从数据库获取
 @app.route('/login/', methods=['GET', 'POST'])
 def login():
     error = None
@@ -85,7 +326,7 @@ def login():
 
         if name == '' or pwd == '':
             return render_template('login.html')
-        elif name == 'username' and pwd == 'admin':
+        elif name == 'admin' and pwd == 'admin':
             session['user_id'] = name
             session['pwd'] = pwd
             session['login_in'] = True
@@ -96,5 +337,5 @@ def login():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0')
 

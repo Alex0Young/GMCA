@@ -1,9 +1,12 @@
+import time
+
 from flask import Flask, render_template
 from flask import request, url_for, session, redirect
 import os
 from flask import flash
 from configparser import ConfigParser
 from functools import wraps
+from config import *
 
 app = Flask(__name__)
 app.debug = True
@@ -309,9 +312,89 @@ def list():
     return render_template('list.html', **locals())
 
 
+# get the current user cert file path
+# if the file exist, return file cert file path and csr file path
+# else return both None
+def get_cert_file_path():
+    if session.get('login_in') != True:
+        return redirect(url_for('login'))
+
+    basedir = 'sub_ca_{name}'.format(name=session['user_id'])
+    cwd = os.getcwd()
+    print('index:', cwd)
+    if cwd.find(basedir) > 0:
+        certfile = 'sub-ca.crt'
+        csrfile = 'sub-ca.csr'
+    else:
+        certfile = '{dir}/sub-ca.crt'.format(dir=basedir)
+        csrfile = '{dir}/sub-ca.csr'.format(dir=basedir)
+
+    if os.path.isfile(certfile):
+        return certfile, csrfile
+    else:
+        return None, None
+
+# get the serial ,subjectinformation from cert file
+# if path exist return serial and subject
+# else return both None
+# path is the cert path
+def get_destroy_crt_info(path):
+    if os.path.isfile(path):
+        cmd = 'openssl x509 -in {path} -noout -serial -subject'.format(path=path)
+        res = os.popen(cmd).readlines()
+        serial = res[0].strip().split("=")[-1]
+        subject = res[1].strip()[8:].replace(" ", "").split(",")
+        return serial, subject
+    else:
+        return None, None
+
+
+# get the cert status
+# if serial exist in index database, return cert status
+# else return None
+def cert_is_revoke(serial, subject):
+    with open(root_database, "r") as f:
+        res = f.readlines()
+    for line in res:
+        line = line.strip().split("\t")
+        tmp_status = line[0]
+        tmp_serial = line[3]
+        tmp_subject = line[5][1:].split("/")
+        if tmp_serial == serial and tmp_subject == subject:
+            if tmp_status == "V":
+                return False
+            elif tmp_status == "R":
+                return True
+    return False
+
+# need user cert file path
 @app.route('/destroy')
 def destroy():
-    return render_template('destroy.html')
+    cert_file, csr_file = get_cert_file_path()
+    if cert_file is not  None and csr_file is not None:
+        path = "tmp"
+        serial, subject = get_destroy_crt_info(cert_file)
+        user_serial, user_subject = get_destroy_crt_info(path)
+        if serial==user_serial and subject ==  user_subject:
+            pem_path = root_cert + serial.split("=")[-1] + ".pem"
+            if cert_is_revoke(serial, subject):
+                msg = "the cert has already been revoked"
+            else:
+                msg = "revoke success"
+                cmd = "openssl ca -revoke {path}".format(path=pem_path)
+                os.system(cmd)
+                time.sleep(1)
+                if cert_is_revoke(serial, subject):
+                    msg = "revoke failed, please try again later"
+                else:
+                    # update revoke list
+                    pass
+        else:
+            msg = "cert file information is not correct, please try again"
+
+    else:
+        msg = "cert not found, please create cert first!"
+    return render_template('destroy.html', **locals())
 
 
 #登录，无注册，登录用户密码需要从数据库获取

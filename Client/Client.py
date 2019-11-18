@@ -28,8 +28,8 @@ def checkInfo(pwd,info):
         return 0
     return 1
 
-def gen_subCA(enpwd, info):
-    return 1
+def gen_key(enpwd, info):
+    os.system("openssl ecparam -genkey -name SM2 -out ")
 
 
 @app.route('/', methods=['GET', 'POST'])

@@ -81,8 +81,8 @@ def initEV():
     cmd6 = 'mkdir sub_ca_{name}/db'
     cmd12 = 'mkdir sub_ca_{name}/csr'
     # prepare config
-    cmd7 = 'echo 1001 > sub_ca_{name}/db/crlnumber'
-    cmd8 = 'touch sub_ca_{name}/db/index'
+    cmd7 = 'echo 01 > sub_ca_{name}/serial'
+    cmd8 = 'touch sub_ca_{name}/index.txt'
     cmd9 = 'touch sub_ca_{name}/db/index.attr'
     cmd10 = 'chmod 700 sub_ca_{name}/private'
     cmd11 = 'cp sub-ca.conf sub_ca_{name}/'
@@ -104,13 +104,12 @@ def initEV():
 def gen_subCA(enpwd, info):
     # gen sm2 key
     basedir = 'sub_ca_{name}/'.format(name=session['user_id'])
-    cmd1 = 'openssl ecparam -genkey -name SM2 -out private/sub-ca.key'
-    cmd2 = 'openssl req -new -config {dir}/sub-ca.conf -key private/sub-ca.key -out sub-ca.csr'
+    # cmd1 = 'openssl ecparam -genkey -name SM2 -out private/sub-ca.key'
+    # cmd2 = 'openssl req -new -config {dir}/sub-ca.conf -key private/sub-ca.key -out sub-ca.csr'
+    cmd1 = 'gmssl ecparam -genkey -name sm2p256v1 -out private/sub-cakey.pem'
+    cmd2 = 'gmssl req -new -sm3 -key private/sub-cakey.pem -out sub-cacsr.pem'
     os.system(cmd1)
     os.system(cmd2)
-    # use root-ca ca sub-ca
-    # cmd3 = 'openssl ca -batch -config ../CA/root-ca.conf -rand_serial -in {dir}/sub-ca.csr -out {dir}/sub-ca.crt -extensions sub_ca_ext -passin pass:{pwd}'.format(dir=basedir,pwd='bupt')
-    # os.system(cmd3)
     return 1
 
 #初始化sub-ca
@@ -120,11 +119,12 @@ def init_CA(enpwd, info):
     cwd = os.getcwd()
     if cwd.find(basedir) < 0:
         os.chdir(basedir)
+
     check1 = "csr"
     if os.path.exists(check1):
         configSubCA(info)
         res = gen_subCA(enpwd, info)
-        check2 = "sub-ca.csr"
+        check2 = "sub-cacsr.pem"
         if os.path.exists(check2):
             return 1
         else:
@@ -141,7 +141,7 @@ def getCsr():
         os.chdir(basedir)
         print('ss')
     print(os.getcwd())
-    csrDir = 'csr'.format(dir=basedir)
+    csrDir = 'csr'
     csrlist = os.listdir(csrDir)
     csrinfo = []
     cmd1 = 'openssl req -subject -noout -in {dir}/{csr} > data'
@@ -160,22 +160,25 @@ def getCsr():
 
 
 #对用户证书请求签名
-def signReq(reqName):
+def signReq(reqName,vadays):
     reqN = reqName.split('.')
+    reque = reqN[0].split('+')
     print("reqN:", reqN)
     basedir = 'sub_ca_{name}'.format(name=session['user_id'])
     # change working dir
     # os.chdir(basedir)
     # sign client req
-    cmd1 = 'openssl ca -batch -config sub-ca.conf -in csr/{req}.csr -out newcerts/{req}.crt -extensions server_ext'.format(
-        req=reqN[0])
+    # cmd1 = 'openssl ca -batch -config sub-ca.conf -in csr/{req}.csr -out newcerts/{req}.crt -extensions server_ext'.format(
+    #     req=reqN[0])
+    reqcert = reqN[0][:-3]
+    cmd1 = 'gmssl ca -batch -md sm3 -extensions v3_ca -in csr/{reqcsr}.pem -out newcerts/{reqcert}cert.pem -days {day} -cert sub-cacert.pem -keyfile private/sub-cakey.pem'.format(reqcsr=reqN[0],reqcrt=reqcert,day=vadays)
     os.system(cmd1)
     # combine sub-ca.crt
-    cmd2 = 'cat sub-ca.crt >> newcerts/{req}.crt'.format(req=reqN[0])
+    cmd2 = 'cat sub-ca.crt >> newcerts/{reqcrt}cert.pem'.format(reqcrt=reqcert)
     os.system(cmd2)
-    crtname = 'newcerts/{req}.crt'.format(req=reqN[0])
+    crtname = 'newcerts/{reqcrt}.pem'.format(reqcrt=reqcert)
     if os.path.isfile(crtname):
-        cmd3 = 'rm csr/{req}.csr'.format(req=reqN[0])
+        cmd3 = 'rm csr/{reqcsr}.pem'.format(req=reqN[0])
         os.system(cmd3)
         print('sign success')
         return 1
@@ -195,7 +198,7 @@ def getCrt():
     cmd1 = 'openssl x509 -subject -in {dir}/{crt} > data'
     for i in range(0, len(crtlist)):
         con = []
-        if crtlist[i] != 'data':
+        if crtlist[i] != 'data' and crtlist[i].find('cert') > 0:
             crt = crtlist[i].split('+')
             con.append(crt[1])
             con.append(crt[0])
@@ -218,11 +221,11 @@ def index():
     print('index:', cwd)
     if cwd.find(basedir) > 0:
         # os.chdir(basedir)
-        certfile = 'sub-ca.crt'
-        csrfile = 'sub-ca.csr'
+        certfile = 'sub-cacert.pem'
+        csrfile = 'sub-cacsr.pem'
     else:
-        certfile = '{dir}/sub-ca.crt'.format(dir=basedir)
-        csrfile = '{dir}/sub-ca.csr'.format(dir=basedir)
+        certfile = '{dir}/sub-cacert.pem'.format(dir=basedir)
+        csrfile = '{dir}/sub-cacsr.pem'.format(dir=basedir)
     # print('log 1',certfile)
     if os.path.isfile(certfile):
         if cwd.find(basedir) < 0:
@@ -233,7 +236,7 @@ def index():
         flag = 1
         return render_template('index.html', **locals())
     elif os.path.isfile(csrfile):
-        if cwd.find(basedir):
+        if cwd.find(basedir) < 0:
             os.chdir(basedir)
         info = []
         info = getConfig()
@@ -294,7 +297,7 @@ def issue():
         csrname = name + '+' + time
         print('csrname:', csrname)
         print("vaddays:", vaddays)
-        res = signReq(csrname)
+        res = signReq(csrname,vaddays)
         return redirect(url_for('issue'))
 
     return render_template('issue.html', **locals())

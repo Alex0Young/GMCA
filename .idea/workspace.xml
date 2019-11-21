@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ac73d15b-47e7-41ea-86cb-cac4626818e4" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CA/CA.py" beforeDir="false" afterPath="$PROJECT_DIR$/CA/CA.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -23,8 +22,8 @@
       <file leaf-file-name="CA.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/CA/CA.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="4028">
-              <caret line="226" column="34" selection-start-line="226" selection-start-column="34" selection-end-line="226" selection-end-column="34" />
+            <state relative-caret-position="588">
+              <caret line="430" lean-forward="true" selection-start-line="430" selection-end-line="430" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -133,7 +132,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -156,6 +154,7 @@
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -302,7 +301,7 @@
       <window_info anchor="bottom" id="Python Console" order="7" sideWeight="0.49932975" weight="0.32956153" />
       <window_info anchor="bottom" id="Run" order="2" sideWeight="0.636059" weight="0.07920792" />
       <window_info anchor="bottom" id="Terminal" order="7" sideWeight="0.49932975" weight="0.32956153" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.20174263" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.20442359" />
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="right" id="Database" order="3" />
       <window_info anchor="right" id="SciView" order="3" />
@@ -570,8 +569,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/CA/CA.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="4028">
-          <caret line="226" column="34" selection-start-line="226" selection-start-column="34" selection-end-line="226" selection-end-column="34" />
+        <state relative-caret-position="588">
+          <caret line="430" lean-forward="true" selection-start-line="430" selection-end-line="430" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>

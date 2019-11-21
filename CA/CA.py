@@ -1,5 +1,4 @@
 import time
-
 from flask import Flask, render_template
 from flask import request, url_for, session, redirect
 import os
@@ -40,7 +39,8 @@ def checkInfo(pwd, info):
 # 编辑 sub-ca.conf
 def configSubCA(info):
     basedir = 'sub_ca_{name}'.format(name=session['user_id'])
-    config_file = '{dir}/sub-ca.conf'.format(dir=basedir)
+    print('++cwd:',os.getcwd())
+    config_file = 'sub-ca.conf'
     cp = ConfigParser()
     cp.read(config_file)
     cp.set('ca_dn', 'countryName', info[0])
@@ -104,10 +104,11 @@ def initEV():
 def gen_subCA(enpwd, info):
     # gen sm2 key
     basedir = 'sub_ca_{name}/'.format(name=session['user_id'])
+
     # cmd1 = 'openssl ecparam -genkey -name SM2 -out private/sub-ca.key'
     # cmd2 = 'openssl req -new -config {dir}/sub-ca.conf -key private/sub-ca.key -out sub-ca.csr'
     cmd1 = 'gmssl ecparam -genkey -name sm2p256v1 -out private/sub-cakey.pem'
-    cmd2 = 'gmssl req -new -sm3 -key private/sub-cakey.pem -out sub-cacsr.pem'
+    cmd2 = 'gmssl req -batch -new -sm3 -key private/sub-cakey.pem -out sub-cacsr.pem -subj /C={C}/ST={ST}/L={L}/O={O}/OU={OU}/CN={CN}/emailAddress={EM}/'.format(C=info[0],ST=info[1],L=info[2],O=info[3],OU=info[4],CN=info[5],EM=info[6])
     os.system(cmd1)
     os.system(cmd2)
     return 1
@@ -115,7 +116,7 @@ def gen_subCA(enpwd, info):
 #初始化sub-ca
 def init_CA(enpwd, info):
     initEV()
-    basedir = 'sub_ca_{name}'.format(name=session['user-id'])
+    basedir = 'sub_ca_{name}'.format(name=session['user_id'])
     cwd = os.getcwd()
     if cwd.find(basedir) < 0:
         os.chdir(basedir)
@@ -141,7 +142,7 @@ def getCsr():
         os.chdir(basedir)
         print('ss')
     print(os.getcwd())
-    csrDir = 'csr'
+    csrDir = 'csr'.format(dir=basedir)
     csrlist = os.listdir(csrDir)
     csrinfo = []
     cmd1 = 'openssl req -subject -noout -in {dir}/{csr} > data'
@@ -164,6 +165,7 @@ def signReq(reqName,vadays):
     reqN = reqName.split('.')
     reque = reqN[0].split('+')
     print("reqN:", reqN)
+    print('reque:',reque)
     basedir = 'sub_ca_{name}'.format(name=session['user_id'])
     # change working dir
     # os.chdir(basedir)
@@ -171,14 +173,14 @@ def signReq(reqName,vadays):
     # cmd1 = 'openssl ca -batch -config sub-ca.conf -in csr/{req}.csr -out newcerts/{req}.crt -extensions server_ext'.format(
     #     req=reqN[0])
     reqcert = reqN[0][:-3]
-    cmd1 = 'gmssl ca -batch -md sm3 -extensions v3_ca -in csr/{reqcsr}.pem -out newcerts/{reqcert}cert.pem -days {day} -cert sub-cacert.pem -keyfile private/sub-cakey.pem'.format(reqcsr=reqN[0],reqcrt=reqcert,day=vadays)
+    cmd1 = 'gmssl ca -batch -md sm3 -extensions v3_ca -in csr/{reqcsr}.pem -out newcerts/{reqcrt}cert.pem -days {day} -cert sub-cacert.pem -keyfile private/sub-cakey.pem'.format(reqcsr=reqN[0],reqcrt=reqcert,day=vadays)
     os.system(cmd1)
     # combine sub-ca.crt
-    cmd2 = 'cat sub-ca.crt >> newcerts/{reqcrt}cert.pem'.format(reqcrt=reqcert)
+    cmd2 = 'cat sub-cacert.pem >> newcerts/{reqcrt}cert.pem'.format(reqcrt=reqcert)
     os.system(cmd2)
-    crtname = 'newcerts/{reqcrt}.pem'.format(reqcrt=reqcert)
+    crtname = 'newcerts/{reqcrt}cert.pem'.format(reqcrt=reqcert)
     if os.path.isfile(crtname):
-        cmd3 = 'rm csr/{reqcsr}.pem'.format(req=reqN[0])
+        cmd3 = 'rm csr/{reqcsr}.pem'.format(reqcsr=reqN[0])
         os.system(cmd3)
         print('sign success')
         return 1
@@ -198,8 +200,9 @@ def getCrt():
     cmd1 = 'openssl x509 -subject -in {dir}/{crt} > data'
     for i in range(0, len(crtlist)):
         con = []
-        if crtlist[i] != 'data' and crtlist[i].find('cert') > 0:
+        if crtlist[i] != 'data' and crtlist[i].find('cert')>0:
             crt = crtlist[i].split('+')
+            print('crt:',crt)
             con.append(crt[1])
             con.append(crt[0])
             os.system(cmd1.format(dir=crtDir, crt=crtlist[i]))
@@ -252,6 +255,7 @@ def index():
 
 @app.route('/initCA', methods=['GET', 'POST'])
 def initCA():
+    print('id:',session.get('user_id'))
     if request.method == 'POST':
         enpwd = []
         enpwd.append(request.form['password'])
@@ -424,4 +428,3 @@ def login():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
-
